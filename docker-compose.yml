@@ -1,0 +1,10 @@
+services:
+  weather-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: weather-app:latest
+    container_name: weather-app
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
