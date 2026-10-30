@@ -1,59 +1,95 @@
 # WeatherApp
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.2.
+A single-page weather app built with [Angular](https://angular.dev/) (v22) and the free
+[Open-Meteo](https://open-meteo.com/) API — no API key required.
 
-## Development server
+The default location is **Schruns, Vorarlberg, Austria**, but the app asks the browser for
+geolocation and switches to the visitor's coordinates when permission is granted.
 
-To start a local development server, run:
+![Screenshot placeholder]
 
-```bash
-ng serve
-```
+## Features
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **Current conditions** — temperature, wind speed (km/h) and a human-readable description,
+  decoded from the WMO weather codes returned by Open-Meteo.
+- **3-day forecast** — today plus the next two days, with min/max temperatures and relative
+  labels such as `Today`, `Tomorrow Mon`, `In 2 days Tue`.
+- **Animated sky** — the background reacts to both the weather kind (`clear`, `cloudy`, `fog`,
+  `rain`, `snow`, `thunder`) and the time of day (`night`, `dawn`, `day`, `dusk`), including a
+  night veil whose opacity follows the sun, plus stars, sun glow, clouds, rain and snow layers.
+- **Local clock** — shows the time in the location's timezone (using the API's UTC offset),
+  refreshed every 30 s.
+- **Geolocation** — follows the visitor's coordinates when available, and gracefully falls back
+  to the default location otherwise.
+- **Refresh button** — re-fetches on demand, with a request-sequence guard so out-of-order
+  responses never overwrite newer data.
+- **Signals throughout** — built on Angular signals and `computed()` values rather than RxJS.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+## Getting started
 
 ```bash
-ng build
+npm install
+npm start        # ng serve → http://localhost:4200/
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The dev server hot-reloads whenever you change a source file.
 
-## Running unit tests
+## Docker
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+A multi-stage image builds the Angular bundle and serves it as static files with nginx on
+port **3001** (gzip, long-lived caching for hashed assets, SPA fallback routing).
 
 ```bash
-ng test
+docker compose up -d --build   # → http://localhost:3001/
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+Or without compose:
 
 ```bash
-ng e2e
+docker build -t weather-app .
+docker run -p 3001:3001 weather-app
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The image includes a healthcheck on `http://localhost:3001/`.
 
-## Additional Resources
+## Project structure
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```
+src/
+  main.ts             # bootstrap
+  index.html          # document shell
+  styles.css          # global styles
+  app/
+    app.ts            # weather + forecast logic, WMO code map, clock/theme computeds
+    app.html          # sky layers and weather card markup
+    app.css           # sky themes and animations
+    app.spec.ts       # unit tests (Vitest)
+    app.config.ts     # application providers
+Dockerfile            # build stage (node) + runtime stage (nginx)
+docker-compose.yml    # local container orchestration
+nginx.conf            # server block for the static bundle
+```
+
+## Commands
+
+| Task | Command |
+| --- | --- |
+| Dev server | `ng serve` |
+| Production build | `ng build` (output in `dist/weather-app/browser`) |
+| Unit tests | `ng test` (Vitest) |
+| Scaffold code | `ng generate component component-name` (`ng generate --help` for all schematics) |
+| Watch build | `npm run watch` |
+
+For the full list of CLI commands, see the
+[Angular CLI Overview and Command Reference](https://angular.dev/tools/cli).
+
+## Notes & limitations
+
+- Geolocation requires a secure context (HTTPS or `localhost`) and user permission.
+- The location is hardcoded apart from geolocation; there is no search box yet.
+- Data is fetched once on load and on manual refresh — there is no automatic polling.
+
+## Resources
+
+- [Open-Meteo API](https://open-meteo.com/) — forecast endpoints and the WMO code list
+- [Angular docs](https://angular.dev/) — signals, components, CLI
